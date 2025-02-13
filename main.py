@@ -59,7 +59,8 @@ burger_rect.topleft = (random.randint(0, WINDOW_WIDTH - burger_rect.width), -BUF
 pygame.mixer.music.play(-1)
 
 # HUD text variables
-points_text, score_text, eaten_text, lives_text, boost_text = None, None, None, None, None
+points_text, score_text, eaten_text, lives_text, boost_text, game_over_text, continue_text = None, None, None, None, None, None, None
+
 
 def prep_text(text, color, **locations):
     rendered_text = font.render(text, True, color)
@@ -68,11 +69,13 @@ def prep_text(text, color, **locations):
         setattr(rect, loc, value)
     return rendered_text, rect
 
+
 def check_quit():
     global running
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
 
 def move_player():
     global player_velocity, player_image
@@ -89,6 +92,7 @@ def move_player():
         player_rect.y += player_velocity
     engage_boost(keys)
 
+
 def engage_boost(keys):
     global player_velocity, boost_level
     if keys[pygame.K_SPACE] and boost_level > 0:
@@ -97,10 +101,12 @@ def engage_boost(keys):
     else:
         player_velocity = PLAYER_NORMAL_VELOCITY
 
+
 def move_burger():
     global burger_points
     burger_rect.y += burger_velocity
     burger_points = int(burger_velocity * (WINDOW_HEIGHT - burger_rect.y + 100))
+
 
 def handle_miss():
     global player_lives
@@ -109,6 +115,7 @@ def handle_miss():
         miss_sound.play()
         reset_burger()
 
+
 def reset_burger():
     global burger_velocity, boost_level
     burger_rect.topleft = (random.randint(0, WINDOW_WIDTH - burger_rect.width), -BUFFER_DISTANCE)
@@ -116,6 +123,7 @@ def reset_burger():
     player_rect.centerx = WINDOW_WIDTH // 2
     player_rect.bottom = WINDOW_HEIGHT
     boost_level = STARTING_BOOST_LEVEL
+
 
 def check_collisions():
     global score, burgers_eaten, burger_velocity, boost_level
@@ -127,6 +135,7 @@ def check_collisions():
         burger_velocity += BURGER_ACCELERATION
         boost_level = min(boost_level + 25, STARTING_BOOST_LEVEL)
 
+
 def update_hud():
     global points_text, score_text, eaten_text, lives_text, boost_text
     points_text, points_rect = prep_text(f"Burger Points: {burger_points}", ORANGE, topleft=(10, 10))
@@ -135,7 +144,49 @@ def update_hud():
     lives_text, lives_rect = prep_text(f"Lives: {player_lives}", ORANGE, topright=(WINDOW_WIDTH - 10, 10))
     boost_text, boost_rect = prep_text(f"Boost: {boost_level}", ORANGE, topright=(WINDOW_WIDTH - 10, 50))
 
-    return [points_text, points_rect, score_text, score_rect, eaten_text, eaten_rect, lives_text, lives_rect, boost_text, boost_rect]
+    return [points_text, points_rect, score_text, score_rect, eaten_text, eaten_rect, lives_text, lives_rect,
+            boost_text, boost_rect]
+
+
+def check_game_over():
+    global game_over_text, continue_text, is_paused, score, burgers_eaten, player_lives, boost_level, burger_velocity, running
+    if player_lives == 0:
+        # Prepare game over text
+        game_over_text = font.render(f"FINAL SCORE: {score}", True, ORANGE)
+        continue_text = font.render("Press any key to play again", True, ORANGE)
+
+        # Display the game over text and continue prompt
+        game_over_rect = game_over_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
+        continue_rect = continue_text.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+
+        # Draw game over text and continue prompt without clearing the game screen
+        display_surface.blit(game_over_text, game_over_rect)
+        display_surface.blit(continue_text, continue_rect)
+
+        # Keep the player and burger on screen
+        display_surface.blit(player_image, player_rect)
+        display_surface.blit(burger_image, burger_rect)
+
+        pygame.display.update()
+        pygame.mixer.music.stop()
+
+        # Pause the game until user input
+        is_paused = True
+        while is_paused:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    # Reset the game and resume
+                    score = 0
+                    burgers_eaten = 0
+                    player_lives = PLAYER_STARTING_LIVES
+                    boost_level = STARTING_BOOST_LEVEL
+                    burger_velocity = STARTING_BURGER_VELOCITY
+                    pygame.mixer.music.play(-1)
+                    is_paused = False
+                if event.type == pygame.QUIT:
+                    is_paused = False
+                    running = False
+
 
 def display_hud(hud_elements):
     display_surface.fill(BLACK)
@@ -145,19 +196,26 @@ def display_hud(hud_elements):
     display_surface.blit(player_image, player_rect)
     display_surface.blit(burger_image, burger_rect)
 
+
 def handle_clock():
     pygame.display.update()
     clock.tick(FPS)
 
+
 running = True
 while running:
     check_quit()
-    move_player()
-    move_burger()
-    handle_miss()
-    check_collisions()
-    hud_elements = update_hud()
-    display_hud(hud_elements)
+    if player_lives > 0:
+        move_player()
+        move_burger()
+        handle_miss()
+        check_collisions()
+        check_game_over()
+        hud_elements = update_hud()
+        display_hud(hud_elements)
+    else:
+        check_game_over()  # Make sure the game over screen shows if player is out of lives
+
     handle_clock()
 
 pygame.quit()
