@@ -237,7 +237,6 @@ pygame.quit()
 
 ------
 
-
 import random
 import pygame
 
@@ -271,42 +270,32 @@ ORANGE = (246, 170, 54)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-font = pygame.font.Font("WashYourHand.ttf", 32)
+font = pygame.font.Font("assets/WashYourHand.ttf", 32)
 
-def prep_text(text, background_color, **locations):
-    text_to_return = font.render(text, True, background_color)
-    rect = text_to_return.get_rect()
-    for location in locations:
-        if location == "topleft":
-            rect.topleft = locations["topleft"]
-        elif location == "centerx":
-            rect.centerx = locations["centerx"]
-        elif location == "y":
-            rect.y = locations["y"]
-        elif location == "topright":
-            rect.topright = locations["topright"]
-        elif location == "center":
-            rect.center = locations["center"]
-    return text_to_return, rect
+def prep_text(text, color, **locations):
+    rendered_text = font.render(text, True, color)
+    rect = rendered_text.get_rect()
+    for loc, value in locations.items():
+        setattr(rect, loc, value)
+    return rendered_text, rect
 
-bark_sound = pygame.mixer.Sound("bark_sound.wav")
-miss_sound = pygame.mixer.Sound("miss_sound.wav")
-pygame.mixer.music.load("bd_background_music.wav")
+bark_sound = pygame.mixer.Sound("assets/bark_sound.wav")
+miss_sound = pygame.mixer.Sound("assets/miss_sound.wav")
+pygame.mixer.music.load("assets/bd_background_music.wav")
 
-player_image_right = pygame.image.load("dog_right.png")
-player_image_left = pygame.image.load("dog_left.png")
+player_image_right = pygame.image.load("assets/dog_right.png")
+player_image_left = pygame.image.load("assets/dog_left.png")
 player_image = player_image_left
 player_rect = player_image.get_rect()
 player_rect.centerx = WINDOW_WIDTH // 2
 player_rect.bottom = WINDOW_HEIGHT
 
-burger_image = pygame.image.load("burger.png")
+burger_image = pygame.image.load("assets/burger.png")
 burger_rect = burger_image.get_rect()
 burger_rect.topleft = (random.randint(0, WINDOW_WIDTH - 32), -BUFFER_DISTANCE)
 
 pygame.mixer.music.play(-1)
 running = True
-is_paused = False
 
 def check_quit():
     global running
@@ -338,7 +327,7 @@ def engage_boost(keys):
         player_velocity = PLAYER_NORMAL_VELOCITY
 
 def move_burger():
-    global burger_velocity, burger_points
+    global burger_points
     burger_rect.y += burger_velocity
     burger_points = int(burger_velocity * (WINDOW_HEIGHT - burger_rect.y + 100))
 
@@ -347,11 +336,15 @@ def handle_miss():
     if burger_rect.y > WINDOW_HEIGHT:
         player_lives -= 1
         miss_sound.play()
-        burger_rect.topleft = (random.randint(0, WINDOW_WIDTH - 32), -BUFFER_DISTANCE)
-        burger_velocity = STARTING_BURGER_VELOCITY
-        player_rect.centerx = WINDOW_WIDTH // 2
-        player_rect.bottom = WINDOW_HEIGHT
-        boost_level = STARTING_BOOST_LEVEL
+        reset_burger()
+
+def reset_burger():
+    global burger_velocity, boost_level
+    burger_rect.topleft = (random.randint(0, WINDOW_WIDTH - 32), -BUFFER_DISTANCE)
+    burger_velocity = STARTING_BURGER_VELOCITY
+    player_rect.centerx = WINDOW_WIDTH // 2
+    player_rect.bottom = WINDOW_HEIGHT
+    boost_level = STARTING_BOOST_LEVEL
 
 def check_collisions():
     global score, burgers_eaten, burger_velocity, boost_level
@@ -361,9 +354,7 @@ def check_collisions():
         bark_sound.play()
         burger_rect.topleft = (random.randint(0, WINDOW_WIDTH - 32), -BUFFER_DISTANCE)
         burger_velocity += BURGER_ACCELERATION
-        boost_level += 25
-        if boost_level > STARTING_BOOST_LEVEL:
-            boost_level = STARTING_BOOST_LEVEL
+        boost_level = min(boost_level + 25, STARTING_BOOST_LEVEL)
 
 def update_hud():
     global points_text, score_text, eaten_text, lives_text, boost_text
