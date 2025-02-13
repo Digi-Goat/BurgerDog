@@ -107,14 +107,12 @@ def move_burger():
     burger_rect.y += burger_velocity
     burger_points = int(burger_velocity * (WINDOW_HEIGHT - burger_rect.y + 100))
 
-
 def handle_miss():
     global player_lives
     if burger_rect.y > WINDOW_HEIGHT:
         player_lives -= 1
         miss_sound.play()
         reset_burger()
-
 
 def reset_burger():
     global burger_velocity, boost_level
@@ -123,7 +121,6 @@ def reset_burger():
     player_rect.centerx = WINDOW_WIDTH // 2
     player_rect.bottom = WINDOW_HEIGHT
     boost_level = STARTING_BOOST_LEVEL
-
 
 def check_collisions():
     global score, burgers_eaten, burger_velocity, boost_level
@@ -135,7 +132,6 @@ def check_collisions():
         burger_velocity += BURGER_ACCELERATION
         boost_level = min(boost_level + 25, STARTING_BOOST_LEVEL)
 
-
 def update_hud():
     global points_text, score_text, eaten_text, lives_text, boost_text
     points_text, points_rect = prep_text(f"Burger Points: {burger_points}", ORANGE, topleft=(10, 10))
@@ -146,7 +142,6 @@ def update_hud():
 
     return [points_text, points_rect, score_text, score_rect, eaten_text, eaten_rect, lives_text, lives_rect,
             boost_text, boost_rect]
-
 
 def check_game_over():
     global game_over_text, continue_text, is_paused, score, burgers_eaten, player_lives, boost_level, burger_velocity, running
@@ -187,7 +182,6 @@ def check_game_over():
                     is_paused = False
                     running = False
 
-
 def display_hud(hud_elements):
     display_surface.fill(BLACK)
     for i in range(0, len(hud_elements), 2):
@@ -196,11 +190,9 @@ def display_hud(hud_elements):
     display_surface.blit(player_image, player_rect)
     display_surface.blit(burger_image, burger_rect)
 
-
 def handle_clock():
     pygame.display.update()
     clock.tick(FPS)
-
 
 running = True
 while running:
